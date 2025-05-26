@@ -44,17 +44,24 @@ struct SIntersection {
     int MaterialType;
 };
 
-struct SMaterial {
-    vec3 Color;
-    vec4 LightCoeffs;
-    float ReflectionCoef;
-    float RefractionCoef;
-    int MaterialType;
+struct SMaterial 
+{ 
+    vec3 Color; 
+    vec4 LightCoeffs; 
+    float ReflectionCoef; 
+    float RefractionCoef; 
+    int MaterialType; 
 };
+
+struct SLight 
+{ 
+    vec3 Position; 
+}; 
 
 STriangle triangles[10];
 SSphere spheres[2];
-SMaterial materials[2];
+SLight light; 
+SMaterial materials[6]; 
 
 SRay GenerateRay(SCamera uCamera) {
     vec2 coords = gPosition.xy * uCamera.Scale;
