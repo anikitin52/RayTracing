@@ -118,6 +118,34 @@ void initializeDefaultScene()
     spheres[1].MaterialIdx = 0; 
 }
 
+bool IntersectSphere ( SSphere sphere, SRay ray, float start, float final, out float 
+time ) 
+{ 
+    ray.Origin -= sphere.Center; 
+    float A = dot ( ray.Direction, ray.Direction ); 
+    float B = dot ( ray.Direction, ray.Origin ); 
+    float C = dot ( ray.Origin, ray.Origin ) - sphere.Radius * sphere.Radius; 
+    float D = B * B - A * C; 
+    if ( D > 0.0 ) 
+ { 
+        D = sqrt ( D ); 
+        //time = min ( max ( 0.0, ( -B - D ) / A ), ( -B + D ) / A ); 
+  float t1 = ( -B - D ) / A; 
+        float t2 = ( -B + D ) / A; 
+        if(t1 < 0 && t2 < 0) 
+   return false; 
+         
+  if(min(t1, t2) < 0) 
+  { 
+            time = max(t1,t2); 
+            return true; 
+        } 
+  time = min(t1, t2); 
+        return true; 
+ } 
+ return false; 
+} 
+
 void main(void) 
 { 
     SCamera uCamera = initializeDefaultCamera(); 
