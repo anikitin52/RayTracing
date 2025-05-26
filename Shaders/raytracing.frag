@@ -57,6 +57,19 @@ SCamera initializeDefaultCamera()
     return uCamera;
 } 
 
+struct SIntersection 
+{ 
+    float Time; 
+    vec3 Point; 
+    vec3 Normal; 
+    vec3 Color; 
+ 
+    vec4 LightCoeffs; 
+    float ReflectionCoef; 
+    float RefractionCoef; 
+    int MaterialType; 
+}; 
+
 void initializeDefaultScene() 
 {
     triangles[0].v1 = vec3(-5.0,-5.0,-5.0); 
