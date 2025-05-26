@@ -85,6 +85,8 @@ namespace RayTracing
             if (success == 0)
             {
                 string log = GL.GetShaderInfoLog(address);
+
+                Console.WriteLine($"Shader compilation failed ({type}): {log}");
                 throw new Exception($"Shader compilation failed ({type}): {log}");
             }
 
@@ -131,19 +133,4 @@ namespace RayTracing
         }
     }
 
-    struct SCamera
-    {
-        vec3 Position;
-        vec3 View;
-        vec3 Up;
-        vec3 Side;
-        // отношение сторон выходного изображения 
-        vec2 Scale;
-    };
-
-    struct SRay
-    {
-        vec3 Origin;
-        vec3 Direction;
-    };
 }

@@ -5,6 +5,7 @@ using OpenTK.Windowing.Common;
 
 namespace RayTracing
 {
+
     internal static class Program
     {
         static void Main(string[] args)
