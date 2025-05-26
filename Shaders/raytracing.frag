@@ -10,22 +10,19 @@ const int REFRACTION = 3;
 
 
  
-struct SSphere 
-{ 
-    vec3 Center; 
-    float Radius; 
-    int MaterialIdx; 
-}; 
-struct STriangle 
-{ 
-    vec3 v1; 
-    vec3 v2; 
-    vec3 v3; 
-    int MaterialIdx; 
-}; 
+struct STriangle {
+    vec3 v1, v2, v3;
+    int MaterialIdx;
+};
+
+struct SSphere {
+    vec3 Center;
+    float Radius;
+    int MaterialIdx;
+};
 
 STriangle triangles[10]; 
-SSphere spheres[2]; 
+SSphere spheres[2];      
 
 struct SCamera 
 { 
@@ -60,9 +57,72 @@ SCamera initializeDefaultCamera()
     return uCamera;
 } 
 
+void initializeDefaultScene() 
+{
+    triangles[0].v1 = vec3(-5.0,-5.0,-5.0); 
+    triangles[0].v2 = vec3(-5.0, 5.0, 5.0); 
+    triangles[0].v3 = vec3(-5.0, 5.0,-5.0); 
+    triangles[0].MaterialIdx = 0; 
+
+    triangles[1].v1 = vec3(-5.0,-5.0,-5.0); 
+    triangles[1].v2 = vec3(-5.0,-5.0, 5.0); 
+    triangles[1].v3 = vec3(-5.0, 5.0, 5.0); 
+    triangles[1].MaterialIdx = 0; 
+
+    triangles[2].v1 = vec3(-5.0,-5.0, 5.0); 
+    triangles[2].v2 = vec3(5.0,-5.0, 5.0); 
+    triangles[2].v3 = vec3(-5.0, 5.0, 5.0); 
+    triangles[2].MaterialIdx = 0; 
+
+    triangles[3].v1 = vec3(5.0, 5.0, 5.0); 
+    triangles[3].v2 = vec3(-5.0, 5.0, 5.0); 
+    triangles[3].v3 = vec3(5.0,-5.0, 5.0); 
+    triangles[3].MaterialIdx = 0; 
+
+    triangles[4].v1 = vec3(5.0,-5.0,-5.0); 
+    triangles[4].v2 = vec3(5.0, 5.0,-5.0); 
+    triangles[4].v3 = vec3(5.0, 5.0, 5.0); 
+    triangles[4].MaterialIdx = 0; 
+
+    triangles[5].v1 = vec3(5.0,-5.0,-5.0); 
+    triangles[5].v2 = vec3(5.0, 5.0, 5.0); 
+    triangles[5].v3 = vec3(5.0,-5.0, 5.0); 
+    triangles[5].MaterialIdx = 0; 
+
+    triangles[6].v1 = vec3(-5.0,-5.0,-5.0); 
+    triangles[6].v2 = vec3(5.0,-5.0,-5.0); 
+    triangles[6].v3 = vec3(5.0, 5.0,-5.0); 
+    triangles[6].MaterialIdx = 0; 
+
+    triangles[7].v1 = vec3(-5.0,-5.0,-5.0); 
+    triangles[7].v2 = vec3(5.0, 5.0,-5.0); 
+    triangles[7].v3 = vec3(-5.0, 5.0,-5.0); 
+    triangles[7].MaterialIdx = 0; 
+
+    triangles[8].v1 = vec3(-5.0,5.0,-5.0); 
+    triangles[8].v2 = vec3(5.0,5.0,-5.0); 
+    triangles[8].v3 = vec3(5.0,5.0,5.0); 
+    triangles[8].MaterialIdx = 0; 
+
+    triangles[9].v1 = vec3(-5.0,5.0,-5.0); 
+    triangles[9].v2 = vec3(5.0,5.0,5.0); 
+    triangles[9].v3 = vec3(-5.0,5.0,5.0); 
+    triangles[9].MaterialIdx = 0; 
+
+    spheres[0].Center = vec3(-1.0,-1.0,-2.0); 
+    spheres[0].Radius = 2.0; 
+    spheres[0].MaterialIdx = 0; 
+
+    spheres[1].Center = vec3(2.0,1.0,2.0); 
+    spheres[1].Radius = 1.0; 
+    spheres[1].MaterialIdx = 0; 
+}
+
 void main(void) 
 { 
     SCamera uCamera = initializeDefaultCamera(); 
     SRay ray = GenerateRay(uCamera); 
+    initializeDefaultScene();
     FragColor = vec4(abs(ray.Direction.xy), 0.0, 1.0); 
 }
+
