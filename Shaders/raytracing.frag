@@ -5,7 +5,7 @@ in vec3 glPosition;
 
 #define EPSILON 0.001
 #define BIG 1000000.0
-#define MAX_STACK_DEPTH 5
+#define MAX_STACK_DEPTH 5 
 
 const int DIFFUSE_REFLECTION = 1;
 const int MIRROR_REFLECTION = 2;
@@ -95,6 +95,16 @@ void initializeDefaultScene() {
     triangles[1].v3 = vec3(-5.0,5.0,5.0);
     triangles[1].MaterialIdx = 0;
 
+    triangles[2].v1 = vec3(-5.0, -5.0, -5.0);
+    triangles[2].v2 = vec3( 5.0, -5.0, -5.0);
+    triangles[2].v3 = vec3(-5.0, -5.0,  5.0);
+    triangles[2].MaterialIdx = 2;
+
+    triangles[3].v1 = vec3( 5.0, -5.0,  5.0);
+    triangles[3].v2 = vec3(-5.0, -5.0,  5.0);
+    triangles[3].v3 = vec3( 5.0, -5.0, -5.0);
+    triangles[3].MaterialIdx = 2;
+
     spheres[0].Center = vec3(-1.0,-1.0,-2.0);
     spheres[0].Radius = 2.0;
     spheres[0].MaterialIdx = 0;
@@ -118,6 +128,12 @@ void initializeDefaultLightMaterials() {
     materials[1].ReflectionCoef = 0.8;
     materials[1].RefractionCoef = 1.0;
     materials[1].MaterialType = MIRROR_REFLECTION;
+
+    materials[2].Color = vec3(0.8, 0.8, 0.8);
+    materials[2].LightCoeffs = vec4(0.4, 0.9, 0.0, 512.0);
+    materials[2].ReflectionCoef = 0.0;
+    materials[2].RefractionCoef = 1.0;
+    materials[2].MaterialType = DIFFUSE_REFLECTION;
 }
 
 bool IntersectSphere(SSphere sphere, SRay ray, float start, float final, out float time) {
@@ -130,37 +146,41 @@ bool IntersectSphere(SSphere sphere, SRay ray, float start, float final, out flo
         D = sqrt(D);
         float t1 = (-B - D) / A;
         float t2 = (-B + D) / A;
-        if (t1 < 0 && t2 < 0) return false;
-        time = (min(t1, t2) < 0) ? max(t1, t2) : min(t1, t2);
-        return true;
+        if (t1 < 0.0 && t2 < 0.0) return false;
+        time = (min(t1, t2) < 0.0) ? max(t1, t2) : min(t1, t2);
+        if (time > start && time < final) {
+            return true;
+        }
     }
     return false;
 }
 
 bool IntersectTriangle(SRay ray, vec3 v1, vec3 v2, vec3 v3, out float time) {
-    vec3 A = v2 - v1;
-    vec3 B = v3 - v1;
-    vec3 N = cross(A, B);
-    float NdotRay = dot(N, ray.Direction);
-    if (abs(NdotRay) < 0.001) return false;
-    float d = dot(N, v1);
-    float t = -(dot(N, ray.Origin) - d) / NdotRay;
-    if (t < 0.0) return false;
-    vec3 P = ray.Origin + t * ray.Direction;
+    vec3 edge1 = v2 - v1;
+    vec3 edge2 = v3 - v1;
+    vec3 pvec = cross(ray.Direction, edge2);
+    float det = dot(edge1, pvec);
 
-    vec3 edge, C;
-    edge = v2 - v1; C = cross(edge, P - v1); if (dot(N, C) < 0.0) return false;
-    edge = v3 - v2; C = cross(edge, P - v2); if (dot(N, C) < 0.0) return false;
-    edge = v1 - v3; C = cross(edge, P - v3); if (dot(N, C) < 0.0) return false;
+    if (abs(det) < EPSILON) return false;
 
-    time = t;
-    return true;
+    float invDet = 1.0 / det;
+    vec3 tvec = ray.Origin - v1;
+    float u = dot(tvec, pvec) * invDet;
+    if (u < 0.0 || u > 1.0) return false;
+
+    vec3 qvec = cross(tvec, edge1);
+    float v = dot(ray.Direction, qvec) * invDet;
+    if (v < 0.0 || u + v > 1.0) return false;
+
+    time = dot(edge2, qvec) * invDet;
+    return time > EPSILON;
 }
 
 bool Raytrace(SRay ray, float start, float final, inout SIntersection intersect) {
     bool hit = false;
     float t;
     intersect.Time = final;
+
     for (int i = 0; i < 2; i++) {
         if (IntersectSphere(spheres[i], ray, start, final, t) && t < intersect.Time) {
             intersect.Time = t;
@@ -177,10 +197,17 @@ bool Raytrace(SRay ray, float start, float final, inout SIntersection intersect)
     }
 
     for (int i = 0; i < 10; i++) {
+        if (dot(triangles[i].v1, triangles[i].v1) == 0.0 &&
+            dot(triangles[i].v2, triangles[i].v2) == 0.0 &&
+            dot(triangles[i].v3, triangles[i].v3) == 0.0 && i > 3) continue;
+
         if (IntersectTriangle(ray, triangles[i].v1, triangles[i].v2, triangles[i].v3, t) && t < intersect.Time) {
             intersect.Time = t;
             intersect.Point = ray.Origin + ray.Direction * t;
             intersect.Normal = normalize(cross(triangles[i].v2 - triangles[i].v1, triangles[i].v3 - triangles[i].v1));
+            if (dot(intersect.Normal, ray.Direction) > 0.0) {
+                intersect.Normal = -intersect.Normal;
+            }
             int idx = triangles[i].MaterialIdx;
             intersect.Color = materials[idx].Color;
             intersect.LightCoeffs = materials[idx].LightCoeffs;
@@ -204,10 +231,13 @@ float Shadow(SLight light, SIntersection isect) {
 
 vec3 Phong(SIntersection isect, SLight light, SCamera cam, float shadow) {
     vec3 L = normalize(light.Position - isect.Point);
+    
     float diff = max(dot(isect.Normal, L), 0.0);
+    
     vec3 V = normalize(cam.Position - isect.Point);
-    vec3 R = reflect(-V, isect.Normal);
-    float spec = pow(max(dot(R, L), 0.0), isect.LightCoeffs.w);
+    vec3 R = reflect(-L, isect.Normal);
+    float spec = pow(max(dot(R, V), 0.0), isect.LightCoeffs.w);
+
     return isect.LightCoeffs.x * isect.Color +
            isect.LightCoeffs.y * diff * isect.Color * shadow +
            isect.LightCoeffs.z * spec * vec3(1.0) * shadow;
@@ -219,30 +249,35 @@ void main(void) {
     initializeDefaultLightMaterials();
 
     SRay primaryRay = GenerateRay(cam);
+    
     STracingRay rayStack[MAX_STACK_DEPTH];
     int stackPtr = 0;
     rayStack[stackPtr] = STracingRay(primaryRay, 1.0, 0);
 
     vec3 resultColor = vec3(0.0);
+
     while (stackPtr >= 0) {
         STracingRay curr = rayStack[stackPtr--];
+
         if (curr.depth > MAX_STACK_DEPTH) continue;
 
         SIntersection hit;
         hit.Time = BIG;
 
-        if (Raytrace(curr.ray, 0.0, BIG, hit)) {
+        if (Raytrace(curr.ray, EPSILON, BIG, hit)) {
             if (hit.MaterialType == DIFFUSE_REFLECTION) {
                 float shadowing = Shadow(light, hit);
                 resultColor += curr.contribution * Phong(hit, light, cam, shadowing);
             } else if (hit.MaterialType == MIRROR_REFLECTION) {
                 if (hit.ReflectionCoef < 1.0) {
-                    float direct = curr.contribution * (1.0 - hit.ReflectionCoef);
+                    float directContribution = curr.contribution * (1.0 - hit.ReflectionCoef);
                     float shadowing = Shadow(light, hit);
-                    resultColor += direct * Phong(hit, light, cam, shadowing);
+                    resultColor += directContribution * Phong(hit, light, cam, shadowing);
                 }
+                
                 vec3 reflDir = reflect(curr.ray.Direction, hit.Normal);
                 SRay reflRay = SRay(hit.Point + reflDir * EPSILON, reflDir);
+                
                 if (stackPtr < MAX_STACK_DEPTH - 1) {
                     rayStack[++stackPtr] = STracingRay(reflRay, curr.contribution * hit.ReflectionCoef, curr.depth + 1);
                 }
