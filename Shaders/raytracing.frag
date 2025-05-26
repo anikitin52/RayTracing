@@ -146,6 +146,44 @@ time )
  return false; 
 } 
 
+bool IntersectTriangle (SRay ray, vec3 v1, vec3 v2, vec3 v3, out float time ) 
+{
+time = -1; 
+vec3 A = v2 - v1; 
+vec3 B = v3 - v1;
+
+vec3 N = cross(A, B); 
+
+float NdotRayDirection = dot(N, ray.Direction); 
+if (abs(NdotRayDirection) < 0.001)  
+ return false; 
+float d = dot(N, v1); 
+float t = -(dot(N, ray.Origin) - d) / NdotRayDirection; 
+if (t < 0)  
+ return false;  
+vec3 P = ray.Origin + t * ray.Direction; 
+vec3 C;
+
+vec3 edge1 = v2 - v1; 
+vec3 VP1 = P - v1; 
+C = cross(edge1, VP1); 
+if (dot(N, C) < 0) 
+ return false; 
+vec3 edge2 = v3 - v2; 
+vec3 VP2 = P - v2; 
+C = cross(edge2, VP2); 
+if (dot(N, C) < 0)  
+ return false;
+
+vec3 edge3 = v1 - v3; 
+vec3 VP3 = P - v3; 
+C = cross(edge3, VP3); 
+if (dot(N, C) < 0)  
+ return false;  
+time = t; 
+return true; 
+}
+
 void main(void) 
 { 
     SCamera uCamera = initializeDefaultCamera(); 
