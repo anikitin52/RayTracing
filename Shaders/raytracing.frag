@@ -2,6 +2,31 @@
 out vec4 FragColor;
 in vec3 gPosition;
 
+#define EPSILON = 0.001 
+#define BIG = 1000000.0 
+const int DIFFUSE = 1; 
+const int REFLECTION = 2; 
+const int REFRACTION = 3; 
+
+
+ 
+struct SSphere 
+{ 
+    vec3 Center; 
+    float Radius; 
+    int MaterialIdx; 
+}; 
+struct STriangle 
+{ 
+    vec3 v1; 
+    vec3 v2; 
+    vec3 v3; 
+    int MaterialIdx; 
+}; 
+
+STriangle triangles[10]; 
+SSphere spheres[2]; 
+
 struct SCamera 
 { 
     vec3 Position; 
