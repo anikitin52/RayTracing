@@ -21,8 +21,7 @@ struct SSphere {
     int MaterialIdx;
 };
 
-STriangle triangles[10]; 
-SSphere spheres[2];      
+
 
 struct SCamera 
 { 
@@ -69,6 +68,48 @@ struct SIntersection
     float RefractionCoef; 
     int MaterialType; 
 }; 
+
+struct SMaterial 
+{
+    vec3 Color;
+    vec4 LightCoeffs;
+    float ReflectionCoef;
+    float RefractionCoef;
+    int MaterialType;
+};
+
+STriangle triangles[10]; 
+SSphere spheres[2];
+SMaterial materials[2];
+
+bool IntersectSphere ( SSphere sphere, SRay ray, float start, float final, out float 
+time ) 
+{ 
+    ray.Origin -= sphere.Center; 
+    float A = dot ( ray.Direction, ray.Direction ); 
+    float B = dot ( ray.Direction, ray.Origin ); 
+    float C = dot ( ray.Origin, ray.Origin ) - sphere.Radius * sphere.Radius; 
+    float D = B * B - A * C; 
+    if ( D > 0.0 ) 
+ { 
+        D = sqrt ( D ); 
+        //time = min ( max ( 0.0, ( -B - D ) / A ), ( -B + D ) / A ); 
+  float t1 = ( -B - D ) / A; 
+        float t2 = ( -B + D ) / A; 
+        if(t1 < 0 && t2 < 0) 
+   return false; 
+         
+  if(min(t1, t2) < 0) 
+  { 
+            time = max(t1,t2); 
+            return true; 
+        } 
+  time = min(t1, t2); 
+        return true; 
+ } 
+ return false; 
+} 
+
 
 void initializeDefaultScene() 
 {
@@ -131,33 +172,7 @@ void initializeDefaultScene()
     spheres[1].MaterialIdx = 0; 
 }
 
-bool IntersectSphere ( SSphere sphere, SRay ray, float start, float final, out float 
-time ) 
-{ 
-    ray.Origin -= sphere.Center; 
-    float A = dot ( ray.Direction, ray.Direction ); 
-    float B = dot ( ray.Direction, ray.Origin ); 
-    float C = dot ( ray.Origin, ray.Origin ) - sphere.Radius * sphere.Radius; 
-    float D = B * B - A * C; 
-    if ( D > 0.0 ) 
- { 
-        D = sqrt ( D ); 
-        //time = min ( max ( 0.0, ( -B - D ) / A ), ( -B + D ) / A ); 
-  float t1 = ( -B - D ) / A; 
-        float t2 = ( -B + D ) / A; 
-        if(t1 < 0 && t2 < 0) 
-   return false; 
-         
-  if(min(t1, t2) < 0) 
-  { 
-            time = max(t1,t2); 
-            return true; 
-        } 
-  time = min(t1, t2); 
-        return true; 
- } 
- return false; 
-} 
+
 
 bool IntersectTriangle (SRay ray, vec3 v1, vec3 v2, vec3 v3, out float time ) 
 {
@@ -196,6 +211,46 @@ if (dot(N, C) < 0)
 time = t; 
 return true; 
 }
+
+
+bool Raytrace(SRay ray, float start, float final, inout SIntersection intersect) { 
+    bool result = false; 
+    float test = start; 
+    intersect.Time = final; 
+
+    for (int i = 0; i < 2; i++) { 
+        SSphere sphere = spheres[i]; 
+        if (IntersectSphere(sphere, ray, start, final, test) && test < intersect.Time) { 
+            intersect.Time = test; 
+            intersect.Point = ray.Origin + ray.Direction * test; 
+            intersect.Normal = normalize(intersect.Point - sphere.Center); 
+            intersect.Color = materials[sphere.MaterialIdx].Color; 
+            intersect.LightCoeffs = materials[sphere.MaterialIdx].LightCoeffs; 
+            intersect.ReflectionCoef = materials[sphere.MaterialIdx].ReflectionCoef; 
+            intersect.RefractionCoef = materials[sphere.MaterialIdx].RefractionCoef; 
+            intersect.MaterialType = materials[sphere.MaterialIdx].MaterialType; 
+            result = true; 
+        } 
+    } 
+
+    for (int i = 0; i < 10; i++) { 
+        STriangle triangle = triangles[i]; 
+        if (IntersectTriangle(ray, triangle.v1, triangle.v2, triangle.v3, test) && test < intersect.Time) { 
+            intersect.Time = test; 
+            intersect.Point = ray.Origin + ray.Direction * test; 
+            intersect.Normal = normalize(cross(triangle.v2 - triangle.v1, triangle.v3 - triangle.v1)); 
+            intersect.Color = materials[triangle.MaterialIdx].Color; 
+            intersect.LightCoeffs = materials[triangle.MaterialIdx].LightCoeffs; 
+            intersect.ReflectionCoef = materials[triangle.MaterialIdx].ReflectionCoef; 
+            intersect.RefractionCoef = materials[triangle.MaterialIdx].RefractionCoef; 
+            intersect.MaterialType = materials[triangle.MaterialIdx].MaterialType; 
+            result = true; 
+        } 
+    } 
+    return result; 
+}
+
+
 
 void main(void) 
 { 
